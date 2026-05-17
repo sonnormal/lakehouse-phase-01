@@ -1,0 +1,23 @@
+name: Phase 1 CI
+on: [push, pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Docker Compose
+        run: docker compose config --quiet
+
+      - name: Validate Terraform
+        run: |
+          terraform -chdir=terraform init -backend=false
+          terraform -chdir=terraform validate
+
+      - name: Trivy — scan MinIO image for CRITICAL CVEs
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e'
+          exit-code: '1'
+          severity: 'CRITICAL'

@@ -1,0 +1,55 @@
+# ~/lakehouse/phase-01/compose.yml
+services:
+  minio:
+    # Pinned digest — update intentionally after trivy scan passes
+    # trivy image minio/minio:latest (scanned 2026-04-19, 4 CRITICAL all require OIDC/LDAP or gRPC internals)
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "127.0.0.1:9000:9000"   # S3 API — localhost only (mitigates GHSA-9c4q, GHSA-hv4r unauthenticated write)
+      - "127.0.0.1:9001:9001"   # Console — localhost only
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus@sha256:e4254400b85610324913f0dc4acf92603d9984e7519414c5a12811aa6146acc3
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor@sha256:3de2bd5203120b866d74a9b283b2ffb8ec382fbf9dc321814700c6ea6f44ec57
+    ports:
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /etc/machine-id:/etc/machine-id:ro   # provides system UUID; suppresses E info.go:120
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana@sha256:0f86bada30d65ef9d0183b90c1e2682ac92d53d95da8bed322b984ea78a4a73a
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on: [prometheus]
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+
+volumes:
+  minio_data:
+  grafana_data:
+  prometheus_data:
