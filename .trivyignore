@@ -1,0 +1,9 @@
+# CVEs present in minio/minio@sha256:14cea493... (latest as of 2026-05-17)
+# Both are fixed upstream but MinIO has not yet shipped an image with the patches.
+# Remove these entries and re-pin the digest once a new MinIO release is available.
+
+# gRPC authorization bypass — fixed in google.golang.org/grpc v1.79.3
+CVE-2026-33186
+
+# TLS certificate validation flaw — fixed in Go 1.24.13 / 1.25.7
+CVE-2025-68121
