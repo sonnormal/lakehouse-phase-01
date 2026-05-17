@@ -10,6 +10,9 @@ jobs:
       - name: Validate Docker Compose
         run: docker compose config --quiet
 
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+
       - name: Validate Terraform
         run: |
           terraform -chdir=terraform init -backend=false
